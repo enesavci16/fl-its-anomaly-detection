@@ -1,0 +1,20 @@
+# Veri dosyaları
+data/*.npz
+data/*.csv
+data/raw/
+
+# Ama işlenmiş küçük çıktıları tut
+!data/processed/
+
+# Notebook checkpoint'leri
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+.env
+fl-env/
+
+# IDE
+.vscode/
+.idea/
