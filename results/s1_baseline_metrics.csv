@@ -1,0 +1,2 @@
+scenario,model,n_train,n_val,n_test,train_anomaly_rate,val_anomaly_rate,test_anomaly_rate,selected_contamination,val_f1,test_f1,test_precision,test_recall,tn,fp,fn,tp
+S1_centralized,IsolationForest,47576,10192,10200,0.016520934925172356,0.010890894819466248,0.028529411764705883,0.008260467462586178,0.8097560975609757,0.7714884696016772,0.989247311827957,0.6323024054982818,9907,2,107,184
