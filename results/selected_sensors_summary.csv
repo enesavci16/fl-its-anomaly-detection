@@ -1,0 +1,5 @@
+Sensor ID,Percentile,Mean Flow,Mean Speed,Mean Occupancy,Anomaly % (Flow),Anomaly % (Speed),Anomaly % (Occ)
+278,P25,128.48,0.03,66.1035,0.0,0.12,1.17
+240,P50,207.13,0.07,58.6972,0.0,1.5,0.39
+71,P75,274.65,0.04,64.7223,0.0,0.01,1.37
+298,P95,372.35,0.07,60.0025,0.0,1.53,1.24
