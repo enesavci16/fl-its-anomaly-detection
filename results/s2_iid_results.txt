@@ -1,0 +1,7 @@
+S2 IID FL Sonuçları
+===================
+Sensör 278: yerel=0.7797, global=0.7717
+Sensör 240: yerel=0.7130, global=0.8030
+Sensör 71:  yerel=0.7903, global=0.6038
+Sensör 298: yerel=0.6935, global=0.6325
+Ortalama:   yerel=0.7441, global=0.7028
