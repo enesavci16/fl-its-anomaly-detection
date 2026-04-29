@@ -1,0 +1,52 @@
+{
+  "S2_vs_S3": {
+    "t_statistic": 13.2811,
+    "p_value": 0.0002,
+    "mean_diff": 0.1294,
+    "significant": true,
+    "group_a": [
+      0.7167,
+      0.7656,
+      0.6842,
+      0.7312,
+      0.7196
+    ],
+    "group_b": [
+      0.6132,
+      0.6136,
+      0.5746,
+      0.5848,
+      0.5843
+    ]
+  },
+  "S2_vs_S1": {
+    "test_type": "one_sample_ttest",
+    "mu": 0.7715,
+    "t_statistic": -3.6643,
+    "p_value": 0.0215,
+    "mean_diff": -0.048,
+    "significant": true,
+    "s2_f1s": [
+      0.7167,
+      0.7656,
+      0.6842,
+      0.7312,
+      0.7196
+    ]
+  },
+  "S3_vs_S1": {
+    "test_type": "one_sample_ttest",
+    "mu": 0.7715,
+    "t_statistic": -21.9377,
+    "p_value": 0.0,
+    "mean_diff": -0.1774,
+    "significant": true,
+    "s3_f1s": [
+      0.6132,
+      0.6136,
+      0.5746,
+      0.5848,
+      0.5843
+    ]
+  }
+}
