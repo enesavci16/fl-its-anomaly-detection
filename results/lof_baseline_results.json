@@ -1,0 +1,16 @@
+{
+  "S1_IsolationForest": {
+    "f1": 0.7715,
+    "precision": 0.9892,
+    "recall": 0.6323
+  },
+  "S1_LOF": {
+    "f1": 0.1309,
+    "precision": 0.2747,
+    "recall": 0.0859
+  },
+  "contamination": 0.00826,
+  "n_train": 47576,
+  "n_test": 10200,
+  "n_anomaly_test": 291
+}
