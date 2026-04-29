@@ -1,0 +1,7 @@
+S3 Non-IID FL Sonuçları
+========================
+Sensör 278: yerel=0.5000, global=0.5217
+Sensör 240: yerel=0.5152, global=0.4793
+Sensör 71:  yerel=0.5246, global=0.5556
+Sensör 298: yerel=0.5347, global=0.7805
+Ortalama:   yerel=0.5186, global=0.5843
