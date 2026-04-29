@@ -75,9 +75,9 @@ fig, ax = plt.subplots(figsize=(5.5, 3.8))
 # S1 baseline referans cizgisi
 ax.axhline(S1_F1, color=COLOR_S1, linewidth=1.4,
            linestyle="--", alpha=0.85, zorder=1)
-ax.text(N_ROUNDS + 0.05, S1_F1 + 0.006,
+ax.text(0.75, S1_F1 + 0.006,
         f"S1 Centralised ({S1_F1:.3f})",
-        color=COLOR_S1, fontsize=9, va="bottom", ha="right")
+        color=COLOR_S1, fontsize=9, va="bottom", ha="left")
 
 # S2 IID — mean cizgisi + std bandi
 ax.fill_between(rounds,
