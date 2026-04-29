@@ -1,0 +1,689 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+% ── Paketler ────────────────────────────────────────────────────────────────
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{url}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% ── Başlık ve Yazarlar ───────────────────────────────────────────────────────
+\title{Privacy-Preserving Traffic Anomaly Detection with Federated Learning:
+A Mininet/SDN Emulation and Ablation Study on PeMS04%
+\thanks{This work was supported by Bursa Uludag University,
+Department of Computer Engineering.}
+}
+
+\author{\IEEEauthorblockN{Authors Anonymized}}
+
+\begin{document}
+\maketitle
+
+% ── Abstract ────────────────────────────────────────────────────────────────
+\begin{abstract}
+Intelligent Transportation Systems (ITS) generate continuous streams of
+sensor data that are conventionally aggregated at a centralised Traffic
+Management Centre (TMC), posing significant privacy risks and bandwidth
+demands.
+In this paper, we propose a raw-data-locality-preserving traffic anomaly
+detection framework based on Federated Learning (FL) and evaluate it on the
+real-world PeMS04 dataset (307 sensors, 59 days, 5-minute intervals).
+We emulate a four-node ITS topology using Mininet and the os-ken
+OpenFlow~1.3 SDN controller, and implement the FedAvg aggregation
+algorithm with an Isolation Forest (IF) anomaly detector.
+A systematic three-scenario ablation study is conducted: (S1)~centralised
+baseline, (S2)~IID-distributed FL, and (S3)~Non-IID FL with
+heterogeneous sensor profiles.
+Experimental results show that S2 achieves an average F1 score of
+$0.703$ (multi-seed: $0.724 \pm 0.029$), only $8.9\%$ below the
+centralised baseline ($0.772$), while keeping raw sensor data local.
+S3 reveals a $24.3\%$ drop ($0.584$; multi-seed: $0.594 \pm 0.018$)
+caused by client drift under heterogeneous data distributions.
+A complementary evaluation confirms that Isolation Forest outperforms
+Local Outlier Factor by a margin of $0.612$ F1 points on this dataset,
+justifying the model selection \textit{a posteriori}.
+Server-to-client communication is reduced to $0.15$~KB per round through
+Federated Threshold Calibration, validating the communication-efficiency
+argument of FL-based anomaly detection.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Federated Learning, Anomaly Detection, Intelligent Transportation
+Systems, Software-Defined Networking, Mininet, PeMS04, FedAvg,
+Isolation Forest, Non-IID, Client Drift
+\end{IEEEkeywords}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Introduction}
+% ════════════════════════════════════════════════════════════════════════════
+
+Modern ITS infrastructures rely on dense networks of IoT sensors—loop
+detectors, speed radars, and cameras—that continuously monitor traffic
+flow, speed, and occupancy.
+Timely detection of anomalies such as accidents, congestion, or sensor
+faults is critical for traffic management.
+The dominant paradigm transmits raw sensor readings to a centralised TMC,
+which introduces three fundamental vulnerabilities:
+(i)~\textit{privacy risk}—vehicle trajectory data constitute personally
+identifiable information regulated by frameworks such as GDPR and the
+Turkish KVKK;
+(ii)~\textit{bandwidth pressure}—hundreds of high-frequency sensors
+saturate shared communication infrastructure;
+(iii)~\textit{data island problem}—sensors owned by different
+administrative entities cannot share raw data for joint model training
+\cite{liu2021deep}.
+
+Federated Learning (FL) \cite{mcmahan2017communication} addresses these
+challenges by training models locally on each client and transmitting
+only model parameters to a central aggregator, so raw data never leaves
+the sensor node.
+While FL has been applied to ITS traffic prediction
+\cite{xia2023short,yuan2023fedSTN}, systematic ablation studies that
+isolate the contribution of FL under realistic network conditions—using
+actual SDN-controlled topologies and TCP sockets—remain scarce.
+
+This paper makes the following contributions:
+\begin{itemize}
+  \item We implement and evaluate FedAvg-based anomaly detection on a
+        Mininet/os-ken SDN emulation with four heterogeneous PeMS04
+        sensor nodes, providing a reproducible network-layer testbed.
+  \item We conduct a three-scenario ablation study (S1~centralised,
+        S2~IID FL, S3~Non-IID FL) that isolates the effects of
+        federation and data heterogeneity on F1 score, communication
+        cost, and convergence.
+  \item We propose \textit{Federated Threshold Calibration}, a
+        lightweight aggregation scheme for Isolation Forest that
+        reduces server-to-client traffic to $0.15$~KB per round.
+\end{itemize}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Related Work}
+% ════════════════════════════════════════════════════════════════════════════
+
+\subsection{FL for ITS Applications}
+
+McMahan et al.~\cite{mcmahan2017communication} introduced FedAvg, which
+minimises communication cost by performing multiple local SGD steps
+before aggregation.
+Li et al.~\cite{li2020federated} systematically characterise the
+challenges of statistical and system heterogeneity in FL, motivating our
+Non-IID scenario.
+
+In the ITS domain, Xia et al.~\cite{xia2023short} and
+Yuan et al.~\cite{yuan2023fedSTN} apply graph-based FL to traffic flow
+prediction on PeMS datasets, establishing benchmark performance figures
+that we use for dataset validation.
+Chellapandi et al.~\cite{chellapandi2024federated} survey FL for
+connected vehicles, identifying communication cost and Non-IID data as
+open challenges.
+
+\subsection{FL for Anomaly Detection}
+
+Liu et al.~\cite{liu2021deep} propose a communication-efficient
+on-device FL framework for time-series anomaly detection in Industrial
+IoT, which serves as the direct methodological template of this work.
+Tham et al.~\cite{tham2023federated} compare FedAvg, FedProx, and
+FedAvg-Adam for anomaly detection in vehicular networks under IID and
+Non-IID settings, confirming that Non-IID distributions consistently
+degrade global model performance.
+
+\subsection{Research Gap}
+
+Existing FL+ITS works predominantly simulate FL on a single machine
+using frameworks such as Flower or PySyft, bypassing the network layer.
+Furthermore, most FL+ITS studies focus on traffic \textit{prediction}
+rather than anomaly \textit{detection}, and few conduct systematic
+ablation studies isolating the Non-IID effect
+\cite{zhang2024federated,kairouz2021advances}.
+Client drift under heterogeneous distributions has been identified as
+a fundamental challenge \cite{karimireddy2020scaffold}, and
+FedProx~\cite{li2020fedprox} has been proposed as a remedy—both are
+deferred to the journal extension of this work.
+Sater and Hamza~\cite{sater2021federated} demonstrate FL-based anomaly
+detection in SDN environments, yet rely on single-machine simulation
+without a real network topology emulation.
+Wang et al.~\cite{wang2025fedgdan} address Non-IID traffic prediction
+on PeMS datasets with adaptive local aggregation, but do not consider
+anomaly detection or network-layer emulation.
+
+Our work explicitly emulates the communication topology with Mininet and
+os-ken, measuring real TCP-socket byte counts and enabling future
+integration of network impairment (delay, packet loss) without code
+changes.
+Table~\ref{tab:positioning} summarises the key differentiators of our
+work relative to the most closely related studies.
+
+\begin{table}[t]
+\caption{Positioning of This Work vs.\ Related FL+ITS Studies}
+\label{tab:positioning}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Work} & \textbf{Net.\ Emul.} & \textbf{Dataset} & \textbf{Non-IID} & \textbf{Anomaly} & \textbf{Ablation} \\
+\midrule
+Liu~\cite{liu2021deep}          & \texttimes & IIoT   & \texttimes & \checkmark & \texttimes \\
+Tham~\cite{tham2023federated}   & \texttimes & Vehic. & \checkmark & \checkmark & \texttimes \\
+Sater~\cite{sater2021federated} & \texttimes & CICIDS & \texttimes & \checkmark & \texttimes \\
+Xia~\cite{xia2023short}         & \texttimes & PeMS   & \texttimes & \texttimes & \texttimes \\
+Wang~\cite{wang2025fedgdan}     & \texttimes & PeMS   & \checkmark & \texttimes & \texttimes \\
+\textbf{Ours}                   & \checkmark & PeMS04 & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{System Design and Dataset}
+% ════════════════════════════════════════════════════════════════════════════
+
+\subsection{Network Topology}
+
+We emulate a four-node ITS network using Mininet~2.3.0
+(Linux Bridge mode) and os-ken~2.3.1 as the OpenFlow~1.3 SDN
+controller—the actively-maintained OpenStack fork of Ryu
+\cite{osken2024}.
+$K\!=\!4$ clients are selected as the minimum scale that captures
+IID/Non-IID contrast while remaining within the memory budget of a
+single-VM proof-of-concept deployment; scalability to larger
+topologies is deferred to the journal extension.
+Each host ($h_1$–$h_4$, IP 10.0.0.1–4) represents an ITS sensor
+acting as an FL client; a fifth host (10.0.0.10) represents the TMC
+aggregation server.
+All hosts connect to a single OVS switch managed by os-ken via
+\texttt{simple\_switch\_13}.
+Connectivity is verified with \texttt{pingall} (0\% packet loss,
+20/20 received); first-hop RTT~$\approx$1~ms (Packet-In + Flow-Mod
+latency), subsequent RTT~$\approx$0.05~ms (flow-table hit).
+FL messages are exchanged over TCP sockets with length-prefixed framing
+(\texttt{struct.pack('>I', len)}) to handle large payloads safely.
+
+\subsection{Dataset: PeMS04}
+
+\begin{figure}[t]
+  \centering
+  \centerline{\includegraphics[width=\columnwidth]{fig06_selected_sensors_weekly.png}}
+  \caption{Weekly traffic flow patterns of the four selected PeMS04
+           sensors (P25/P50/P75/P95). Distinct diurnal and load profiles
+           confirm Non-IID data heterogeneity across clients.}
+  \label{fig:sensor_profiles}
+\end{figure}
+
+The PeMS04 dataset \cite{caltrans2024pems} comprises traffic
+measurements from 307 sensors across 29 roads in the San Francisco Bay
+Area over 59 days (January--February 2018) at 5-minute intervals,
+yielding $16{,}992 \times 307 \times 3$ samples (flow, speed,
+occupancy).
+No missing values were found.
+
+Four sensors are selected via a percentile-based strategy
+(P25, P50, P75, P95 of mean flow) to ensure heterogeneous Non-IID
+profiles representative of low-density rural, arterial, on-ramp, and
+high-density highway segments, respectively
+(sensor IDs: 278, 240, 71, 298).
+A notable finding is that flow values never exceed $|z|>3$; anomalies
+are therefore driven exclusively by speed and occupancy, which is
+consistent with the distributional properties of PeMS data and is
+reported as a dataset observation.
+
+\subsection{Anomaly Labelling}
+
+Anomaly labels are generated automatically using Z-score thresholding
+($|z|>3$) applied per sensor per feature (OR rule: any feature
+exceeding the threshold flags the time step as anomalous).
+Z-score statistics ($\mu$, $\sigma$) are computed exclusively on the
+training split to prevent data leakage.
+A chronological 70/15/15 train/validation/test split is applied
+(no shuffling) to preserve temporal integrity.
+The resulting contamination rate across sensors ranges from
+$1.49\%$ to $1.84\%$, confirming label consistency.
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Methodology}
+% ════════════════════════════════════════════════════════════════════════════
+
+\subsection{Ablation Scenarios}
+
+Three scenarios isolate the contribution of each system component:
+
+\begin{itemize}
+  \item \textbf{S1 — Centralised Baseline:} All four sensors' data are
+        pooled at the TMC. An Isolation Forest
+        (\texttt{n\_estimators=100}, \texttt{max\_samples='auto'},
+        \texttt{random\_state=42}) is trained on the combined
+        dataset. The contamination hyperparameter is tuned on the
+        validation split via grid search, yielding $c^*=0.00826$.
+        Raw data ($\approx$21~MB) is transmitted to the TMC.
+  \item \textbf{S2 — IID FL:} Training data is shuffled and partitioned
+        equally across four clients before being assigned to sensor nodes.
+        FedAvg is executed over three communication rounds.
+  \item \textbf{S3 — Non-IID FL:} Each client retains its own sensor's
+        natural traffic distribution (heterogeneous flow profiles),
+        reflecting a realistic deployment where data islands are preserved.
+\end{itemize}
+
+\subsection{Federated Threshold Calibration}
+
+Standard FL aggregation of tree-based models (e.g., averaging decision
+trees) is impractical due to structural incompatibility after
+serialisation.
+We propose \textit{Federated Threshold Calibration}: each client trains
+a full local Isolation Forest and transmits only its anomaly decision
+threshold (\texttt{offset\_}) to the TMC.
+The server computes a sample-weighted average of client thresholds and
+broadcasts the global threshold back to all clients, which update their
+local decision boundaries without retraining.
+This approach is directly aligned with the communication-efficient FL
+philosophy of \cite{liu2021deep}, reducing server-to-client traffic to
+$0.15$~KB per round (versus $\approx$1.7~MB for full model transmission).
+It is important to note that \textit{client drift} in this context
+refers exclusively to \emph{threshold drift}: divergence of the
+scalar \texttt{offset\_} values learned on heterogeneous local
+distributions.
+Tree structure is never transmitted or merged; only the scalar
+threshold is federated.
+This distinction decouples the aggregation mechanism from
+sklearn's internal model representation and ensures correctness
+after serialisation.
+
+\subsection{FedAvg Protocol}
+
+\begin{equation}
+\hat{\tau}_{\text{global}} = \frac{\sum_{k=1}^{K} n_k \cdot \tau_k}{\sum_{k=1}^{K} n_k}
+\label{eq:fedavg_threshold}
+\end{equation}
+
+\noindent
+where $K=4$ is the number of clients, $n_k$ is the number of training
+samples at client $k$, and $\tau_k$ is the local anomaly threshold
+derived from the \texttt{offset\_} attribute of the locally trained
+Isolation Forest. The global threshold $\hat{\tau}_{\text{global}}$
+(Eq.~\ref{eq:fedavg_threshold}) is then broadcast to all clients.
+Three aggregation rounds are executed; all four clients participate in
+every round (full participation).
+The round count is justified empirically: as shown in
+Fig.~\ref{fig:convergence}, S2 reaches a stable F1 plateau after
+round~1 ($0.742 \to 0.715 \to 0.724$, mean over 5 seeds), indicating
+that additional rounds yield diminishing returns under Federated
+Threshold Calibration.
+S3 improves marginally across rounds ($0.587 \to 0.591 \to 0.594$),
+confirming that the Non-IID convergence bottleneck stems from
+distributional divergence rather than insufficient rounds.
+
+\subsection{Evaluation Metrics}
+
+Performance is assessed on the held-out test set (15\% of each sensor's
+data) using:
+(1)~F1 score (primary metric, harmonic mean of Precision and Recall);
+(2)~communication cost (total bytes transmitted over TCP sockets,
+measured by the Mininet host processes);
+(3)~client drift, defined as the signed difference between global and
+local F1 per sensor ($\Delta_k = \text{F1}_{\text{global},k} -
+\text{F1}_{\text{local},k}$).
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Experimental Results}
+% ════════════════════════════════════════════════════════════════════════════
+
+\subsection{S1: Centralised Baseline}
+
+\begin{figure}[t]
+  \centering
+  \centerline{\includegraphics[width=0.75\columnwidth]{fig08_s1_confusion_matrix.png}}
+  \caption{Confusion matrix of the S1 centralised Isolation Forest
+           on the test set (TP=184, FP=2, FN=107, TN=9907).
+           High Precision ($0.989$) with moderate Recall ($0.632$)
+           indicates conservative threshold behaviour.}
+  \label{fig:confusion}
+\end{figure}
+
+The centralised Isolation Forest achieves
+$\text{F1}=0.7715$, $\text{Precision}=0.9892$, $\text{Recall}=0.6323$
+on the test set (Table~\ref{tab:ablation}).
+The high Precision--low Recall profile indicates conservative threshold
+behaviour: the model raises very few false alarms but misses $36.8\%$
+of true anomalies.
+This pattern is consistent with the default contamination-based
+thresholding of Isolation Forest and serves as the reference upper bound
+for the FL scenarios.
+
+\subsection{S2 and S3: Federated Learning Results}
+
+\begin{figure}[t]
+  \centering
+  \centerline{\includegraphics[width=\columnwidth]{fig14_convergence_curve.png}}
+  \caption{FL convergence curves: average F1 score per communication
+           round for S2 (IID) and S3 (Non-IID), reported as
+           mean~$\pm$~std over 5 random seeds.
+           S2 plateaus after round~1; S3 improves marginally,
+           confirming that the Non-IID bottleneck is distributional
+           rather than round-count limited.
+           Dashed line: S1 centralised baseline ($0.772$).}
+  \label{fig:convergence}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \centerline{\includegraphics[width=\columnwidth]{fig10_ablation_f1.png}}
+  \caption{Ablation study results: average F1 score across three
+           scenarios. S2 (IID FL) achieves $91.1\%$ of centralised
+           accuracy; S3 (Non-IID FL) shows a $24.3\%$ drop due to
+           client drift.}
+  \label{fig:ablation}
+\end{figure}
+
+\begin{figure*}[t]
+  \centering
+  \centerline{\includegraphics[width=0.82\textwidth]{fig11_client_drift.png}}
+  \caption{Client drift analysis: local (pre-aggregation) vs.\ global
+           (federated) F1 score per sensor under IID (left) and Non-IID
+           (right) data distributions. Positive $\Delta$ indicates
+           federation improves the client; negative $\Delta$ indicates
+           the global threshold degrades local performance.}
+  \label{fig:drift}
+\end{figure*}
+
+Table~\ref{tab:ablation} summarises the three-scenario comparison;
+per-sensor breakdowns are reported in Table~\ref{tab:persensor}.
+S2 (IID FL) reaches an average global F1 of $0.703$, a modest
+$8.9\%$ reduction relative to S1, while raw data never leaves any
+client node.
+This trade-off is considered acceptable for privacy-sensitive ITS
+deployments.
+
+S3 (Non-IID FL) yields $\text{F1}=0.584$, a $24.3\%$ drop from S1,
+attributable to client drift: heterogeneous training distributions
+produce divergent local thresholds, and the weighted average degrades
+performance for sensors whose traffic profiles differ most from the
+global mean.
+Sensor~240 exhibits the clearest drift instance
+($\Delta_{240} = -0.036$), where the aggregated threshold is pulled
+away from its local optimum by the three other sensors.
+
+\subsection{Communication Cost}
+
+\begin{figure}[t]
+  \centering
+  \centerline{\includegraphics[width=\columnwidth]{communication_cost_diagram.png}}
+  \caption{Comparative communication overhead and network flow across scenarios.
+           S1 transmits raw data, exposing privacy. S2/S3 transmit local model
+           parameters upstream (protecting privacy) and highly efficient threshold scalars downstream.}
+  \label{fig:commcost}
+\end{figure}
+
+Figure~\ref{fig:commcost} and Table~\ref{tab:comm} illustrate the comparative communication overhead and network flow between the traditional centralised baseline and the proposed Federated Threshold Calibration (FTC) framework. In the centralised architecture (S1), raw sensor measurements are continuously streamed to the Traffic Management Centre (TMC), resulting in significant bandwidth consumption ($\approx$21.0~MB) and inherent privacy vulnerabilities due to the exposure of individual vehicle trajectories. Conversely, in the federated scenarios (S2/S3), raw sensor measurements
+remain strictly local to each client node, ensuring \textit{raw data locality}:
+no individual vehicle trajectories are transmitted to the TMC.
+
+Regarding communication efficiency, server-to-client (download) traffic is reduced to $0.15$~KB per round ($1.8$~KB total) by transmitting only the aggregated global threshold scalar, validating the framework's downlink efficiency. Although the current client-to-server (upload) traffic ($\approx$20.4~MB) is relatively high due to full model serialisation in the proof-of-concept prototype, raw training data is never transmitted; the privacy implications of model parameter exposure (e.g., membership inference attacks) are beyond the scope of this proof-of-concept and are deferred to the journal extension, where Differential Privacy mechanisms will be evaluated. This analysis serves as a quantitative baseline for future optimisations aimed at reducing uplink traffic to scalar dimensions ($<$1~KB), further enhancing the system's scalability.
+
+% ── Ablasyon Tablosu ────────────────────────────────────────────────────────
+\begin{table}[t]
+\caption{Three-Scenario Ablation: Anomaly Detection Performance (PeMS04, 4 Sensors)}
+\label{tab:ablation}
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Scenario} & \textbf{Single-run F1} & \textbf{Multi-seed F1} & \textbf{$\Delta$ vs S1} & \textbf{Data Privacy} \\
+\midrule
+S1 Centralised & 0.7715 & — & —        & \texttimes\ (raw data at TMC) \\
+S2 IID FL      & 0.7028 & $0.724 \pm 0.029$ & $-8.9\%$  & \checkmark\ (local only) \\
+S3 Non-IID FL  & 0.5843 & $0.594 \pm 0.018$ & $-24.3\%$ & \checkmark\ (local only) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ── İletişim Maliyeti Tablosu ────────────────────────────────────────────────
+\begin{table}[t]
+\caption{Communication Cost Comparison (4 Clients $\times$ 3 FL Rounds)}
+\label{tab:comm}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Scenario} & \textbf{Client$\to$Server} & \textbf{Server$\to$Client} \\
+\midrule
+S1 Centralised & $\approx$21 MB (raw data) & — \\
+S2 IID FL      & $\approx$20.4 MB (model)  & 1.8 KB (threshold) \\
+S3 Non-IID FL  & $\approx$20.4 MB (model)  & 1.8 KB (threshold) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ── Per-Sensör FL Sonuçları Tablosu ─────────────────────────────────────────
+\begin{table}[t]
+\caption{Per-Sensor FL Results: Local vs.\ Global F1 Score (S2 IID and S3 Non-IID)}
+\label{tab:persensor}
+\centering
+\begin{tabular}{llccc}
+\toprule
+\textbf{Scenario} & \textbf{Sensor (Percentile)} & \textbf{Local F1} & \textbf{Global F1} & \textbf{$\Delta$} \\
+\midrule
+\multirow{5}{*}{S2 IID}
+  & 278 (P25) & 0.7797 & 0.7717 & $-0.008$ \\
+  & 240 (P50) & 0.7130 & 0.8030 & $+0.090$ \\
+  & 71  (P75) & 0.7903 & 0.6038 & $-0.187$ \\
+  & 298 (P95) & 0.6935 & 0.6325 & $-0.061$ \\
+  & \textbf{Average} & \textbf{0.7441} & \textbf{0.7028} & $-0.041$ \\
+\midrule
+\multirow{5}{*}{S3 Non-IID}
+  & 278 (P25) & 0.5000 & 0.5217 & $+0.022$ \\
+  & 240 (P50) & 0.5152 & 0.4793 & $-0.036$ \\
+  & 71  (P75) & 0.5246 & 0.5556 & $+0.031$ \\
+  & 298 (P95) & 0.5347 & 0.7805 & $+0.246$ \\
+  & \textbf{Average} & \textbf{0.5186} & \textbf{0.5843} & $+0.066$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Discussion}
+% ════════════════════════════════════════════════════════════════════════════
+
+\textbf{Privacy--accuracy trade-off (AS1):}
+S2 demonstrates that FL achieves $91.1\%$ of the centralised F1
+without ever transmitting raw sensor data, directly answering AS1.
+The $8.9\%$ gap is attributable to the aggregation of threshold scalars
+rather than full gradient updates, and to the three-round convergence
+limit.
+A one-sample $t$-test confirms that the S2 F1 distribution ($0.724 \pm 0.029$)
+is statistically significantly below S1 ($t=-3.664$, $p=0.022$),
+yet the practical effect size remains modest ($\Delta=-0.048$),
+supporting the acceptability of this trade-off for privacy-sensitive deployments.
+
+\textbf{Communication cost (AS2):}
+Server-to-client overhead ($1.8$~KB total) is negligible compared to
+the $21$~MB centralised raw-data transfer, validating FL's communication
+advantage (AS2).
+Client-to-server traffic ($\approx$20.4~MB) is dominated by full
+Isolation Forest serialisation—a deliberate design choice in this study
+to decouple the federation protocol from the aggregation mechanism and
+preserve cross-scenario comparability.
+Replacing model transmission with scalar-only \texttt{offset\_} sharing
+($<$1~KB per client per round) is the primary target for the journal
+extension, which will deliver a fully communication-efficient pipeline
+with negligible network footprint in both directions.
+
+\textbf{Non-IID effect and client drift (AS3):}
+The $15.4$~percentage-point gap between S2 and S3 confirms that data
+heterogeneity is the dominant factor degrading FL performance (AS3).
+A paired $t$-test over 5 seeds confirms this gap is statistically
+significant ($t=13.281$, $p=0.0002$), and a one-sample test confirms
+S3 is significantly below S1 ($t=-21.938$, $p<0.0001$).
+The weighted-average aggregation of FedAvg is insufficient to reconcile
+divergent threshold distributions; adaptive aggregation strategies
+(e.g., FedProx~\cite{li2020fedprox}, SCAFFOLD~\cite{karimireddy2020scaffold},
+personalised FL) are reserved for the journal extension.
+
+\textbf{Algorithm selection — IF vs.\ LOF (AS1 supplement):}
+To justify the choice of Isolation Forest over alternative unsupervised
+detectors, we additionally evaluate Local Outlier Factor (LOF)
+\cite{breunig2000lof} under the same centralised pooled setting.
+LOF assigns anomaly scores based on the ratio of a point's local
+reachability density to that of its $k$ nearest neighbours: points
+residing in sparse neighbourhoods relative to their surroundings
+receive high outlier scores.
+While effective in low-dimensional, small-scale datasets, LOF exhibits
+three structural weaknesses on PeMS04.
+\textit{First}, the pooled training set (47,576 samples) makes
+neighbourhood computation statistically unstable, as local density
+estimates lose discriminative power at this scale.
+\textit{Second}, PeMS04 features span vastly different ranges—flow
+($0$–$919$), speed ($0$–$1$), occupancy ($0$–$100$)—causing
+Euclidean-distance-based neighbourhood search to be dominated by the
+flow dimension; even after StandardScaler normalisation, F1 remains
+below $0.17$ across all tested values of $k \in \{20,50,100,200\}$.
+\textit{Third}, anomalies in this dataset are rare ($\approx$2.85\%)
+and manifest as isolated temporal spikes rather than coherent spatial
+clusters, which structurally disadvantages density-based methods.
+Isolation Forest, by contrast, exploits the same sparsity property
+directly: anomalies are isolated with fewer random partitions
+regardless of feature scale.
+The resulting F1 gap (IF: $0.772$ vs.\ LOF: $0.160$) confirms that
+isolation-based detection is the appropriate choice for large-scale
+ITS sensor data, and validates our model selection \textit{a posteriori}.
+
+\textbf{Limitations:}
+(i)~Isolation Forest threshold aggregation is a simplification of true
+model federation; deep learning models would enable gradient-based
+FedAvg.
+(ii)~The emulation does not introduce artificial network impairments
+(delay, jitter, packet loss); this is planned for the Q1 journal version.
+(iii)~Only one benchmark dataset (PeMS04) is used; cross-validation on
+PeMS08 and METR-LA is deferred.
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Conclusion}
+% ════════════════════════════════════════════════════════════════════════════
+
+We presented a raw-data-locality-preserving FL framework for traffic anomaly
+detection, evaluated on PeMS04 via a Mininet/os-ken SDN emulation.
+Our three-scenario ablation study shows that IID FL achieves $91.1\%$
+of centralised accuracy while keeping raw data local; the residual $8.9\%$
+gap is likely attributable to threshold-scalar aggregation rather than
+full gradient exchange, and its precise decomposition is left as future work.
+Federated Threshold Calibration reduces server-to-client traffic to
+$0.15$~KB per round.
+These findings provide a reproducible, network-layer baseline for future
+FL+ITS research.
+
+Future work will extend the framework with FedProx under realistic
+4G/LTE channel models, Differential Privacy, and gradient compression.
+Additionally, replacing full model serialisation with scalar-only
+threshold transmission (\texttt{offset\_}, $<$1~KB per client per round)
+will reduce client-to-server overhead by four orders of magnitude,
+closing the remaining gap towards a fully communication-efficient
+FL pipeline for ITS deployments.
+
+% ── Tesekkur ────────────────────────────────────────────────────────────────
+\section*{Acknowledgment}
+
+The authors thank the Bursa Uludag University Department of Computer
+Engineering for providing computational resources.
+The PeMS04 dataset is publicly available via the California Department
+of Transportation Performance Measurement System (PeMS).
+
+% ── Kaynakça ────────────────────────────────────────────────────────────────
+\begin{thebibliography}{16}
+
+\bibitem{breunig2000lof}
+M.~M. Breunig, H.-P. Kriegel, R.~T. Ng, and J.~Sander,
+``LOF: Identifying density-based local outliers,''
+in \textit{Proc. ACM SIGMOD Int. Conf. Manage. Data},
+Dallas, TX, USA, May 2000, pp. 93--104.
+
+\bibitem{mcmahan2017communication}
+H.~B. McMahan, E.~Moore, D.~Ramage, S.~Hampson, and B.~A. y~Arcas,
+``Communication-efficient learning of deep networks from decentralized data,''
+in \textit{Proc. 20th Int. Conf. Artif. Intell. Statist. (AISTATS)},
+Fort Lauderdale, FL, USA, Apr. 2017, pp. 1273--1282.
+
+\bibitem{li2020federated}
+T.~Li, A.~K. Sahu, A.~Talwalkar, and V.~Smith,
+``Federated learning: Challenges, methods, and future directions,''
+\textit{IEEE Signal Process. Mag.}, vol.~37, no.~3, pp. 50--60, May 2020.
+
+\bibitem{li2020fedprox}
+T.~Li, A.~K. Sahu, M.~Zaheer, M.~Sanjabi, A.~Smola, and V.~Smith,
+``Federated optimization in heterogeneous networks,''
+in \textit{Proc. 3rd Conf. Mach. Learn. Syst. (MLSys)}, Austin, TX, USA, 2020.
+
+\bibitem{karimireddy2020scaffold}
+S.~P. Karimireddy, S.~Kale, M.~Mohri, S.~Reddi, S.~Stich, and A.~T. Suresh,
+``SCAFFOLD: Stochastic controlled averaging for federated learning,''
+in \textit{Proc. 37th Int. Conf. Mach. Learn. (ICML)},
+Vienna, Austria, Jul. 2020, pp. 5132--5143.
+
+\bibitem{kairouz2021advances}
+P.~Kairouz et al.,
+``Advances and open problems in federated learning,''
+\textit{Found. Trends Mach. Learn.}, vol.~14, no.~1--2, pp. 1--210, 2021.
+
+\bibitem{liu2021deep}
+Y.~Liu, S.~Garg, J.~Nie, Y.~Zhang, Z.~Xiong, J.~Kang, and M.~S. Hossain,
+``Deep anomaly detection for time-series data in industrial IoT:
+A communication-efficient on-device federated learning approach,''
+\textit{IEEE Internet Things J.}, vol.~8, no.~8, pp. 6348--6358, Apr. 2021.
+
+\bibitem{sater2021federated}
+R.~A. Sater and A.~B. Hamza,
+``A federated learning approach to anomaly detection in software-defined networks,''
+\textit{ACM Trans. Intell. Syst. Technol.}, vol.~12, no.~5, pp. 1--26, Oct. 2021.
+
+\bibitem{xia2023short}
+M.~Xia, D.~Jin, and J.~Chen,
+``Short-term traffic flow prediction based on graph convolutional networks
+and federated learning,''
+\textit{IEEE Trans. Intell. Transp. Syst.}, vol.~24, no.~1,
+pp. 1191--1203, Jan. 2023.
+
+\bibitem{yuan2023fedSTN}
+X.~Yuan et al.,
+``FedSTN: Graph representation driven federated learning for edge computing
+enabled urban traffic flow prediction,''
+\textit{IEEE Trans. Intell. Transp. Syst.}, vol.~24, no.~8,
+pp. 8738--8748, Aug. 2023.
+
+\bibitem{chellapandi2024federated}
+V.~P. Chellapandi, L.~Yuan, C.~G. Brinton, S.~H. Żak, and Z.~Wang,
+``Federated learning for connected and automated vehicles: A survey of
+existing approaches and challenges,''
+\textit{IEEE Trans. Intell. Veh.}, vol.~9, no.~1, pp. 119--137, Jan. 2024.
+
+\bibitem{zhang2024federated}
+S.~Zhang, Z.~Han, W.~Saad, and Z.~Wang,
+``Federated learning in intelligent transportation systems:
+Recent applications and open problems,''
+\textit{IEEE Trans. Intell. Transp. Syst.}, vol.~25, no.~4,
+pp. 3259--3278, Apr. 2024.
+
+\bibitem{tham2023federated}
+K.~P. Tham et al.,
+``Federated learning for anomaly detection in vehicular networks,''
+in \textit{Proc. IEEE Veh. Technol. Conf. (VTC-Spring)}, 2023.
+
+\bibitem{wang2025fedgdan}
+Y.~Wang et al.,
+``FedGDAN: Privacy-preserving traffic flow prediction via federated
+graph diffusion attention networks,''
+\textit{Sci. Rep.}, vol.~15, no.~1, Nov. 2025.
+
+\bibitem{osken2024}
+OpenStack Foundation,
+``os-ken: A component-based SDN framework (actively-maintained fork of Ryu),''
+\url{https://opendev.org/openstack/os-ken}, 2024.
+
+\bibitem{caltrans2024pems}
+California Dept.\ of Transportation (Caltrans),
+``PeMS: Performance measurement system,''
+\url{https://pems.dot.ca.gov/}, 2024.
+
+\end{thebibliography}
+
+\end{document}
