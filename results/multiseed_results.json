@@ -3,29 +3,54 @@
     "42": {
       "sensor": {
         "278": {
-          "local_f1": 0.855,
-          "global_f1": 0.855,
+          "local_f1": 0.7797,
+          "global_f1": 0.7797,
           "delta": 0.0
         },
         "240": {
-          "local_f1": 0.713,
-          "global_f1": 0.713,
+          "local_f1": 0.6095,
+          "global_f1": 0.6095,
           "delta": 0.0
         },
         "71": {
-          "local_f1": 0.735,
-          "global_f1": 0.735,
+          "local_f1": 0.7091,
+          "global_f1": 0.7091,
           "delta": 0.0
         },
         "298": {
-          "local_f1": 0.5636,
-          "global_f1": 0.5636,
+          "local_f1": 0.6992,
+          "global_f1": 0.6992,
           "delta": 0.0
         }
       },
-      "avg_global_f1": 0.7167
+      "avg_global_f1": 0.6994
     },
     "0": {
+      "sensor": {
+        "278": {
+          "local_f1": 0.7899,
+          "global_f1": 0.7899,
+          "delta": 0.0
+        },
+        "240": {
+          "local_f1": 0.7731,
+          "global_f1": 0.7731,
+          "delta": 0.0
+        },
+        "71": {
+          "local_f1": 0.5545,
+          "global_f1": 0.5545,
+          "delta": 0.0
+        },
+        "298": {
+          "local_f1": 0.6441,
+          "global_f1": 0.6441,
+          "delta": 0.0
+        }
+      },
+      "avg_global_f1": 0.6904
+    },
+    "1": {
       "sensor": {
         "278": {
           "local_f1": 0.8333,
@@ -33,105 +58,130 @@
           "delta": 0.0
         },
         "240": {
-          "local_f1": 0.7591,
-          "global_f1": 0.7591,
+          "local_f1": 0.7903,
+          "global_f1": 0.7903,
           "delta": 0.0
         },
         "71": {
-          "local_f1": 0.7414,
-          "global_f1": 0.7414,
+          "local_f1": 0.713,
+          "global_f1": 0.713,
           "delta": 0.0
         },
         "298": {
-          "local_f1": 0.7287,
-          "global_f1": 0.7287,
+          "local_f1": 0.6018,
+          "global_f1": 0.6018,
           "delta": 0.0
         }
       },
-      "avg_global_f1": 0.7656
-    },
-    "1": {
-      "sensor": {
-        "278": {
-          "local_f1": 0.8,
-          "global_f1": 0.8,
-          "delta": 0.0
-        },
-        "240": {
-          "local_f1": 0.5556,
-          "global_f1": 0.5556,
-          "delta": 0.0
-        },
-        "71": {
-          "local_f1": 0.7478,
-          "global_f1": 0.7478,
-          "delta": 0.0
-        },
-        "298": {
-          "local_f1": 0.6333,
-          "global_f1": 0.6333,
-          "delta": 0.0
-        }
-      },
-      "avg_global_f1": 0.6842
+      "avg_global_f1": 0.7346
     },
     "2": {
       "sensor": {
         "278": {
-          "local_f1": 0.7647,
-          "global_f1": 0.7647,
+          "local_f1": 0.8361,
+          "global_f1": 0.8361,
           "delta": 0.0
         },
         "240": {
-          "local_f1": 0.7801,
-          "global_f1": 0.7801,
+          "local_f1": 0.7009,
+          "global_f1": 0.7009,
           "delta": 0.0
         },
         "71": {
-          "local_f1": 0.8033,
-          "global_f1": 0.8033,
+          "local_f1": 0.8209,
+          "global_f1": 0.8209,
           "delta": 0.0
         },
         "298": {
-          "local_f1": 0.5766,
-          "global_f1": 0.5766,
+          "local_f1": 0.6833,
+          "global_f1": 0.6833,
           "delta": 0.0
         }
       },
-      "avg_global_f1": 0.7312
+      "avg_global_f1": 0.7603
     },
     "3": {
       "sensor": {
         "278": {
-          "local_f1": 0.7788,
-          "global_f1": 0.7788,
+          "local_f1": 0.5161,
+          "global_f1": 0.5161,
           "delta": 0.0
         },
         "240": {
-          "local_f1": 0.791,
-          "global_f1": 0.791,
+          "local_f1": 0.8088,
+          "global_f1": 0.8088,
           "delta": 0.0
         },
         "71": {
-          "local_f1": 0.7321,
-          "global_f1": 0.7321,
+          "local_f1": 0.7091,
+          "global_f1": 0.7091,
           "delta": 0.0
         },
         "298": {
-          "local_f1": 0.5766,
-          "global_f1": 0.5766,
+          "local_f1": 0.736,
+          "global_f1": 0.736,
           "delta": 0.0
         }
       },
-      "avg_global_f1": 0.7196
+      "avg_global_f1": 0.6925
     }
   },
   "s3": {
     "42": {
       "sensor": {
         "278": {
-          "local_f1": 0.6154,
-          "global_f1": 0.6154,
+          "local_f1": 0.5,
+          "global_f1": 0.5,
+          "delta": 0.0
+        },
+        "240": {
+          "local_f1": 0.4576,
+          "global_f1": 0.4576,
+          "delta": 0.0
+        },
+        "71": {
+          "local_f1": 0.5574,
+          "global_f1": 0.5574,
+          "delta": 0.0
+        },
+        "298": {
+          "local_f1": 0.721,
+          "global_f1": 0.721,
+          "delta": 0.0
+        }
+      },
+      "avg_global_f1": 0.559
+    },
+    "0": {
+      "sensor": {
+        "278": {
+          "local_f1": 0.5833,
+          "global_f1": 0.5833,
+          "delta": 0.0
+        },
+        "240": {
+          "local_f1": 0.5203,
+          "global_f1": 0.5203,
+          "delta": 0.0
+        },
+        "71": {
+          "local_f1": 0.5667,
+          "global_f1": 0.5667,
+          "delta": 0.0
+        },
+        "298": {
+          "local_f1": 0.5905,
+          "global_f1": 0.5905,
+          "delta": 0.0
+        }
+      },
+      "avg_global_f1": 0.5652
+    },
+    "1": {
+      "sensor": {
+        "278": {
+          "local_f1": 0.5581,
+          "global_f1": 0.5581,
           "delta": 0.0
         },
         "240": {
@@ -140,19 +190,19 @@
           "delta": 0.0
         },
         "71": {
-          "local_f1": 0.6275,
-          "global_f1": 0.6275,
+          "local_f1": 0.64,
+          "global_f1": 0.64,
           "delta": 0.0
         },
         "298": {
-          "local_f1": 0.7654,
-          "global_f1": 0.7654,
+          "local_f1": 0.8235,
+          "global_f1": 0.8235,
           "delta": 0.0
         }
       },
-      "avg_global_f1": 0.6132
+      "avg_global_f1": 0.6165
     },
-    "0": {
+    "2": {
       "sensor": {
         "278": {
           "local_f1": 0.5854,
@@ -160,97 +210,47 @@
           "delta": 0.0
         },
         "240": {
-          "local_f1": 0.4833,
-          "global_f1": 0.4833,
+          "local_f1": 0.431,
+          "global_f1": 0.431,
           "delta": 0.0
         },
         "71": {
-          "local_f1": 0.6038,
-          "global_f1": 0.6038,
+          "local_f1": 0.697,
+          "global_f1": 0.697,
           "delta": 0.0
         },
         "298": {
-          "local_f1": 0.7819,
-          "global_f1": 0.7819,
+          "local_f1": 0.8175,
+          "global_f1": 0.8175,
           "delta": 0.0
         }
       },
-      "avg_global_f1": 0.6136
-    },
-    "1": {
-      "sensor": {
-        "278": {
-          "local_f1": 0.48,
-          "global_f1": 0.48,
-          "delta": 0.0
-        },
-        "240": {
-          "local_f1": 0.5082,
-          "global_f1": 0.5082,
-          "delta": 0.0
-        },
-        "71": {
-          "local_f1": 0.5152,
-          "global_f1": 0.5152,
-          "delta": 0.0
-        },
-        "298": {
-          "local_f1": 0.7952,
-          "global_f1": 0.7952,
-          "delta": 0.0
-        }
-      },
-      "avg_global_f1": 0.5746
-    },
-    "2": {
-      "sensor": {
-        "278": {
-          "local_f1": 0.5455,
-          "global_f1": 0.5455,
-          "delta": 0.0
-        },
-        "240": {
-          "local_f1": 0.4035,
-          "global_f1": 0.4035,
-          "delta": 0.0
-        },
-        "71": {
-          "local_f1": 0.6531,
-          "global_f1": 0.6531,
-          "delta": 0.0
-        },
-        "298": {
-          "local_f1": 0.7373,
-          "global_f1": 0.7373,
-          "delta": 0.0
-        }
-      },
-      "avg_global_f1": 0.5848
+      "avg_global_f1": 0.6327
     },
     "3": {
       "sensor": {
         "278": {
-          "local_f1": 0.4444,
-          "global_f1": 0.4444,
-          "delta": 0.0
-        },
-        "240": {
-          "local_f1": 0.4959,
-          "global_f1": 0.4959,
-          "delta": 0.0
-        },
-        "71": {
           "local_f1": 0.5714,
           "global_f1": 0.5714,
           "delta": 0.0
         },
+        "240": {
+          "local_f1": 0.4,
+          "global_f1": 0.4,
+          "delta": 0.0
+        },
+        "71": {
+          "local_f1": 0.5231,
+          "global_f1": 0.5231,
+          "delta": 0.0
+        },
         "298": {
-          "local_f1": 0.8254,
-          "global_f1": 0.8254,
+          "local_f1": 0.8,
+          "global_f1": 0.8,
           "delta": 0.0
         }
       },
-      "avg_global_f1": 0.5843
+      "avg_global_f1": 0.5736
     }
   }
 }
