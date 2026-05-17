@@ -10,7 +10,7 @@ import socket
 import json
 import threading
 import struct
-from fedavg_utils import bytes_to_model, model_to_bytes, fedavg_aggregate
+from fedavg_utils import fedavg_aggregate
 
 HOST = '0.0.0.0'
 PORT = 9999
@@ -61,13 +61,13 @@ def run_round(round_num):
               f"| payload: {len(json.dumps(msg).encode())} byte")
         client_data.append(msg)
     
-    # Modelleri deserialize et
-    models = [bytes_to_model(d['model']) for d in client_data]
+    # Sadece offset_ ve n_samples çıkar — full model yok
+    offsets   = [d['offset_']   for d in client_data]
     n_samples = [d['n_samples'] for d in client_data]
     
     # FedAvg aggregation
     print(f"\n[TMC] FedAvg aggregation yapılıyor...")
-    global_model = fedavg_aggregate(models, n_samples)
+    global_model = fedavg_aggregate(offsets, n_samples)
     print(f"[TMC] Global offset hazır — "
           f"offset_={global_model:.6f}")
     

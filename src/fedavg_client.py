@@ -18,7 +18,7 @@ from sklearn.metrics import f1_score
 
 # fedavg_utils'i import etmek için src dizinini path'e ekle
 sys.path.append('/home/enes/fl-its/src')
-from fedavg_utils import model_to_bytes, bytes_to_model
+# fedavg_utils: artık sadece offset_ gönderiliyor, pickle yok
 
 TMC_IP   = '127.0.0.1'
 TMC_PORT = 9999
@@ -96,17 +96,17 @@ def run_client(sensor_id, round_num):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((TMC_IP, TMC_PORT))
     
-    model_bytes = model_to_bytes(local_model)
     msg = {
         'sensor_id': sensor_id,
         'round':     round_num,
-        'n_samples': len(X_train),
-        'local_f1':  local_f1,
-        'model':     model_bytes
+        'n_samples': int(len(X_train)),
+        'local_f1':  float(local_f1),
+        'offset_':   float(local_model.offset_)
     }
+    import json as _json
+    payload_size = len(_json.dumps(msg).encode())
     send_msg(s, msg)
-    print(f"[Sensör {sensor_id}] Model gönderildi: "
-          f"{len(model_bytes)/1024:.2f} KB")
+    print(f"[Sensör {sensor_id}] Offset gönderildi: {payload_size} byte")
     
     # Global modeli al
     # Global offset'i al

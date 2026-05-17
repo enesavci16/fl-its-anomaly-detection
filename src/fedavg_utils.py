@@ -1,25 +1,15 @@
 #!/usr/bin/env python3
-import pickle
-import base64
+import json
 import numpy as np
-from sklearn.ensemble import IsolationForest
 
+def params_to_bytes(offset, n_samples):
+    """Sadece offset_ ve n_samples gönder — pickle yok, full model yok."""
+    return json.dumps({'offset_': float(offset), 'n_samples': int(n_samples)})
 
-def model_to_bytes(model):
-    return base64.b64encode(pickle.dumps(model)).decode('utf-8')
+def bytes_to_params(payload_str):
+    return json.loads(payload_str)
 
-
-def bytes_to_model(b64_str):
-    return pickle.loads(base64.b64decode(b64_str.encode('utf-8')))
-
-
-def fedavg_aggregate(models, n_samples_list):
-    """
-    Federated threshold calibration.
-    Her client'ın anomali eşiğini (offset_) ağırlıklı ortalama ile birleştirir.
-    """
-    global_offset = float(np.average(
-        [m.offset_ for m in models],
-        weights=n_samples_list
-    ))
+def fedavg_aggregate(offsets, n_samples_list):
+    """Weighted average of client offset_ values."""
+    global_offset = float(np.average(offsets, weights=n_samples_list))
     return global_offset
