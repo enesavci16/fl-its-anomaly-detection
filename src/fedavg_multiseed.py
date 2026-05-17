@@ -26,7 +26,7 @@ SENSOR_IDS    = [278, 240, 71, 298]
 SEEDS         = [42, 0, 1, 2, 3]
 N_ROUNDS      = 3
 CONTAMINATION = 0.00826
-FEATURES      = ["flow", "speed", "occupancy"]
+FEATURES = ["flow", "occupancy", "speed"]
 
 IID_DIR    = "/home/enes/fl-its-data/data/splits/iid"
 NONIID_DIR = "/home/enes/fl-its-data/data/splits/non_iid"
