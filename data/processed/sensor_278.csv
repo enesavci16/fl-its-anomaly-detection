@@ -1,4 +1,4 @@
-time_step,flow,speed,occupancy
+time_step,flow,occupancy,speed
 0,15.0,0.0048,67.2
 1,26.0,0.0061,67.8
 2,18.0,0.0041,66.2
