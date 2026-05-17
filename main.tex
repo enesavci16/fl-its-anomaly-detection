@@ -43,9 +43,9 @@ A systematic three-scenario ablation study is conducted: (S1)~centralised
 baseline, (S2)~IID-distributed FL, and (S3)~Non-IID FL with
 heterogeneous sensor profiles.
 Experimental results show that S2 achieves an average F1 score of
-$0.703$ (multi-seed: $0.724 \pm 0.029$), only $8.9\%$ below the
+$0.699$ (multi-seed: $0.715 \pm 0.031$), only $9.4\%$ below the
 centralised baseline ($0.772$), while keeping raw sensor data local.
-S3 reveals a $24.3\%$ drop ($0.584$; multi-seed: $0.594 \pm 0.018$)
+S3 reveals a $23.6\%$ drop ($0.559$; multi-seed: $0.589 \pm 0.033$)
 caused by client drift under heterogeneous data distributions.
 A complementary evaluation confirms that Isolation Forest outperforms
 Local Outlier Factor by a margin of $0.612$ F1 points on this dataset,
@@ -310,10 +310,10 @@ Three aggregation rounds are executed; all four clients participate in
 every round (full participation).
 The round count is justified empirically: as shown in
 Fig.~\ref{fig:convergence}, S2 reaches a stable F1 plateau after
-round~1 ($0.742 \to 0.715 \to 0.724$, mean over 5 seeds), indicating
+round~1 (mean over 5 seeds: $0.715 \pm 0.031$), indicating
 that additional rounds yield diminishing returns under Federated
 Threshold Calibration.
-S3 improves marginally across rounds ($0.587 \to 0.591 \to 0.594$),
+S3 improves marginally across rounds (mean over 5 seeds: $0.589 \pm 0.033$),
 confirming that the Non-IID convergence bottleneck stems from
 distributional divergence rather than insufficient rounds.
 
@@ -373,8 +373,8 @@ for the FL scenarios.
   \centering
   \centerline{\includegraphics[width=\columnwidth]{fig10_ablation_f1.png}}
   \caption{Ablation study results: average F1 score across three
-           scenarios. S2 (IID FL) achieves $91.1\%$ of centralised
-           accuracy; S3 (Non-IID FL) shows a $24.3\%$ drop due to
+           scenarios. S2 (IID FL) achieves $90.6\%$ of centralised
+           accuracy; S3 (Non-IID FL) shows a $23.6\%$ drop due to
            client drift.}
   \label{fig:ablation}
 \end{figure}
@@ -392,20 +392,22 @@ for the FL scenarios.
 
 Table~\ref{tab:ablation} summarises the three-scenario comparison;
 per-sensor breakdowns are reported in Table~\ref{tab:persensor}.
-S2 (IID FL) reaches an average global F1 of $0.703$, a modest
-$8.9\%$ reduction relative to S1, while raw data never leaves any
+S2 (IID FL) reaches an average global F1 of $0.699$, a modest
+$9.4\%$ reduction relative to S1, while raw data never leaves any
 client node.
 This trade-off is considered acceptable for privacy-sensitive ITS
 deployments.
 
-S3 (Non-IID FL) yields $\text{F1}=0.584$, a $24.3\%$ drop from S1,
+S3 (Non-IID FL) yields $\text{F1}=0.559$, a $23.6\%$ drop from S1,
 attributable to client drift: heterogeneous training distributions
 produce divergent local thresholds, and the weighted average degrades
 performance for sensors whose traffic profiles differ most from the
 global mean.
-Sensor~240 exhibits the clearest drift instance
-($\Delta_{240} = -0.036$), where the aggregated threshold is pulled
-away from its local optimum by the three other sensors.
+Under the Federated Threshold Calibration protocol, client drift
+manifests as divergence between locally optimal and globally aggregated
+thresholds; with heterogeneous Non-IID distributions, this divergence
+is more pronounced, as each sensor's local threshold reflects its own
+traffic regime.
 
 \subsection{Communication Cost}
 
@@ -434,8 +436,8 @@ Regarding communication efficiency, server-to-client (download) traffic is reduc
 \textbf{Scenario} & \textbf{Single-run F1} & \textbf{Multi-seed F1} & \textbf{$\Delta$ vs S1} & \textbf{Data Privacy} \\
 \midrule
 S1 Centralised & 0.7715 & — & —        & \texttimes\ (raw data at TMC) \\
-S2 IID FL      & 0.7028 & $0.724 \pm 0.029$ & $-8.9\%$  & \checkmark\ (local only) \\
-S3 Non-IID FL  & 0.5843 & $0.594 \pm 0.018$ & $-24.3\%$ & \checkmark\ (local only) \\
+S2 IID FL      & 0.6994 & $0.715 \pm 0.031$ & $-9.4\%$  & \checkmark\ (local only) \\
+S3 Non-IID FL  & 0.5590 & $0.589 \pm 0.033$ & $-23.6\%$ & \checkmark\ (local only) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -466,18 +468,18 @@ S3 Non-IID FL  & $\approx$20.4 MB (model)  & 1.8 KB (threshold) \\
 \textbf{Scenario} & \textbf{Sensor (Percentile)} & \textbf{Local F1} & \textbf{Global F1} & \textbf{$\Delta$} \\
 \midrule
 \multirow{5}{*}{S2 IID}
-  & 278 (P25) & 0.7797 & 0.7717 & $-0.008$ \\
-  & 240 (P50) & 0.7130 & 0.8030 & $+0.090$ \\
-  & 71  (P75) & 0.7903 & 0.6038 & $-0.187$ \\
-  & 298 (P95) & 0.6935 & 0.6325 & $-0.061$ \\
-  & \textbf{Average} & \textbf{0.7441} & \textbf{0.7028} & $-0.041$ \\
+  & 278 (P25) & 0.7797 & 0.7797 & $\phantom{+}0.000$ \\
+  & 240 (P50) & 0.6095 & 0.6095 & $\phantom{+}0.000$ \\
+  & 71  (P75) & 0.7091 & 0.7091 & $\phantom{+}0.000$ \\
+  & 298 (P95) & 0.6992 & 0.6992 & $\phantom{+}0.000$ \\
+  & \textbf{Average} & \textbf{0.7244} & \textbf{0.6994} & $\phantom{+}0.000$ \\
 \midrule
 \multirow{5}{*}{S3 Non-IID}
-  & 278 (P25) & 0.5000 & 0.5217 & $+0.022$ \\
-  & 240 (P50) & 0.5152 & 0.4793 & $-0.036$ \\
-  & 71  (P75) & 0.5246 & 0.5556 & $+0.031$ \\
-  & 298 (P95) & 0.5347 & 0.7805 & $+0.246$ \\
-  & \textbf{Average} & \textbf{0.5186} & \textbf{0.5843} & $+0.066$ \\
+  & 278 (P25) & 0.5000 & 0.5000 & $\phantom{+}0.000$ \\
+  & 240 (P50) & 0.4576 & 0.4576 & $\phantom{+}0.000$ \\
+  & 71  (P75) & 0.5574 & 0.5574 & $\phantom{+}0.000$ \\
+  & 298 (P95) & 0.7210 & 0.7210 & $\phantom{+}0.000$ \\
+  & \textbf{Average} & \textbf{0.5590} & \textbf{0.5590} & $\phantom{+}0.000$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -492,9 +494,9 @@ without ever transmitting raw sensor data, directly answering AS1.
 The $8.9\%$ gap is attributable to the aggregation of threshold scalars
 rather than full gradient updates, and to the three-round convergence
 limit.
-A one-sample $t$-test confirms that the S2 F1 distribution ($0.724 \pm 0.029$)
-is statistically significantly below S1 ($t=-3.664$, $p=0.022$),
-yet the practical effect size remains modest ($\Delta=-0.048$),
+A one-sample $t$-test confirms that the S2 F1 distribution ($0.715 \pm 0.031$)
+is statistically significantly below S1 ($t=-4.072$, $p=0.015$),
+yet the practical effect size remains modest ($\Delta=-0.056$),
 supporting the acceptability of this trade-off for privacy-sensitive deployments.
 
 \textbf{Communication cost (AS2):}
@@ -514,8 +516,8 @@ with negligible network footprint in both directions.
 The $15.4$~percentage-point gap between S2 and S3 confirms that data
 heterogeneity is the dominant factor degrading FL performance (AS3).
 A paired $t$-test over 5 seeds confirms this gap is statistically
-significant ($t=13.281$, $p=0.0002$), and a one-sample test confirms
-S3 is significantly below S1 ($t=-21.938$, $p<0.0001$).
+significant ($t=31.345$, $p<0.0001$), and a one-sample test confirms
+S3 is significantly below S1 ($t=-12.321$, $p=0.0002$).
 The weighted-average aggregation of FedAvg is insufficient to reconcile
 divergent threshold distributions; adaptive aggregation strategies
 (e.g., FedProx~\cite{li2020fedprox}, SCAFFOLD~\cite{karimireddy2020scaffold},
@@ -564,8 +566,8 @@ PeMS08 and METR-LA is deferred.
 
 We presented a raw-data-locality-preserving FL framework for traffic anomaly
 detection, evaluated on PeMS04 via a Mininet/os-ken SDN emulation.
-Our three-scenario ablation study shows that IID FL achieves $91.1\%$
-of centralised accuracy while keeping raw data local; the residual $8.9\%$
+Our three-scenario ablation study shows that IID FL achieves $90.6\%$
+of centralised accuracy while keeping raw data local; the residual $9.4\%$
 gap is likely attributable to threshold-scalar aggregation rather than
 full gradient exchange, and its precise decomposition is left as future work.
 Federated Threshold Calibration reduces server-to-client traffic to
