@@ -114,8 +114,9 @@ def run_fedavg(data: dict, seed: int) -> dict:
     Her round: yerel egit → aggregate → global offset guncelle.
     Son round sonrasi local ve global F1 raporla.
     """
-    global_offset = None
-    local_models  = [None] * 4
+    global_offset      = None
+    local_models       = [None] * 4
+    last_local_offsets = [None] * 4
 
     for round_num in range(1, N_ROUNDS + 1):
         offsets   = []
@@ -125,12 +126,13 @@ def run_fedavg(data: dict, seed: int) -> dict:
             X_train = data[i][0]
             model   = train_local_if(X_train, seed=seed * 10 + round_num + i)
 
-            if global_offset is not None:
-                model.offset_ = global_offset
-
-            offsets.append(model.offset_)
+            local_offset = float(model.offset_)
+            offsets.append(local_offset)
             n_samples.append(len(X_train))
             local_models[i] = model
+
+            if round_num == N_ROUNDS:
+                last_local_offsets[i] = local_offset
 
         global_offset = fedavg_aggregate(offsets, n_samples)
 
@@ -138,7 +140,8 @@ def run_fedavg(data: dict, seed: int) -> dict:
     sensor_results = {}
     for i in range(4):
         X_test, y_test = data[i][1], data[i][2]
-        local_f1  = evaluate(local_models[i], X_test, y_test)
+        local_f1  = evaluate(local_models[i], X_test, y_test,
+                             global_offset=last_local_offsets[i])
         global_f1 = evaluate(local_models[i], X_test, y_test,
                              global_offset=global_offset)
         sid = SENSOR_IDS[i]
