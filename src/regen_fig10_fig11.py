@@ -37,13 +37,13 @@ ax.annotate('', xy=(1, f1_values[1] + 0.01),
             xytext=(0, f1_values[0] + 0.01),
             arrowprops=dict(arrowstyle='->', color='#333333', lw=1.2))
 ax.text(0.5, max(f1_values[0], f1_values[1]) + 0.038,
-        '-9.3%', ha='center', fontsize=9, color='#333333')
+        '-4.0%', ha='center', fontsize=9, color='#333333')
 
 ax.annotate('', xy=(2, f1_values[2] + 0.01),
             xytext=(0, f1_values[0] + 0.01),
             arrowprops=dict(arrowstyle='->', color='#333333', lw=1.2))
 ax.text(1.5, f1_values[0] + 0.038,
-        '-27.5%', ha='center', fontsize=9, color='#333333')
+        '-28.4%', ha='center', fontsize=9, color='#333333')
 
 ax.axhline(y=f1_values[0], color=BLUE, linestyle='--',
            linewidth=1.0, alpha=0.5, zorder=2)
@@ -64,8 +64,8 @@ print('fig10 kaydedildi ✓')
 # ── FIG 11 ──────────────────────────────────────────────────────────
 sensor_labels = ['S278\n(P25)', 'S240\n(P50)', 'S71\n(P75)', 'S298\n(P95)']
 
-s2_local  = [0.7797, 0.7130, 0.7903, 0.6935]
-s2_global = [0.7717, 0.8030, 0.6038, 0.6325]
+s2_local  = [0.7500, 0.7009, 0.7563, 0.7097]
+s2_global = [0.8033, 0.7130, 0.7368, 0.7097]
 s2_delta  = [g - l for g, l in zip(s2_global, s2_local)]
 
 s3_local  = [0.5000, 0.4576, 0.5574, 0.7210]
