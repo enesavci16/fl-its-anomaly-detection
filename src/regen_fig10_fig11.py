@@ -21,7 +21,7 @@ plt.rcParams.update({'font.family': 'serif', 'font.size': 11})
 # ── FIG 10 ──────────────────────────────────────────────────────────
 fig, ax = plt.subplots(figsize=(6, 4.5))
 scenarios = ['S1\nCentralized', 'S2\nIID FL', 'S3\nNon-IID FL']
-f1_values = [0.7715, 0.7028, 0.5590]
+f1_values = [0.7715, 0.7407, 0.5527]
 colors    = [BLUE, GREEN, RED]
 
 bars = ax.bar(scenarios, f1_values, width=0.45,
