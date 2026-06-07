@@ -50,7 +50,7 @@ def send_msg(conn, msg):
 def load_data(sensor_id):
     """Sensörün yerel verisini yükle"""
     df = pd.read_csv(SENSOR_MAP[sensor_id])
-    features = ['flow', 'speed', 'occupancy']
+    features = ['flow', 'occupancy', 'speed']
     
     train = df[df['split'] == 'train']
     test  = df[df['split'] == 'test']
