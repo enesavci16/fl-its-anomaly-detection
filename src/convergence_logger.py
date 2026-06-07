@@ -28,10 +28,10 @@ SENSOR_IDS    = [278, 240, 71, 298]
 SEEDS         = [42, 0, 1, 2, 3]
 N_ROUNDS      = 3
 CONTAMINATION = 0.00826
-FEATURES      = ["flow", "speed", "occupancy"]
+FEATURES      = ["flow", "occupancy", "speed"]
 
-IID_DIR    = "/home/enes/fl-its-data/data/splits/iid"
-NONIID_DIR = "/home/enes/fl-its-data/data/splits/non_iid"
+IID_DIR    = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "splits", "iid")
+NONIID_DIR    = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "splits", "non_iid")
 
 REPO_ROOT   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 RESULTS_DIR = os.path.join(REPO_ROOT, "results")
@@ -93,12 +93,13 @@ def evaluate_global(models: list, data: dict,
 
 def run_convergence(data: dict, seed: int) -> dict:
     """
-    N_ROUNDS boyunca FedAvg calistir.
-    Her round sonrasi global avg F1 kaydet.
+    N_ROUNDS boyunca FedAvg calistir (stability semantigi).
+    Her round: 4 client taze IF egitir -> threshold aggregate -> avg F1 kaydet.
+    Threshold-only calibration tek turda yakinsadiginden, sonraki turlar
+    ayni veri uzerinde farkli random seed ile kararliligi gosterir.
     Donus: {"round_1": f1, "round_2": f1, "round_3": f1}
     """
-    global_offset = None
-    round_f1s     = {}
+    round_f1s = {}
 
     for round_num in range(1, N_ROUNDS + 1):
         offsets   = []
@@ -110,9 +111,6 @@ def run_convergence(data: dict, seed: int) -> dict:
             model   = train_local_if(
                 X_train, seed=seed * 10 + round_num + i
             )
-            if global_offset is not None:
-                model.offset_ = global_offset
-
             offsets.append(model.offset_)
             n_samples.append(len(X_train))
             models.append(model)

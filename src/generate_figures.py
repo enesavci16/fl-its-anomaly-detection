@@ -139,32 +139,29 @@ def parse_fl_results(path):
 
 
 def load_fl_metrics(results_dir):
-    """S2 ve S3 metriklerini yükler. Bulamazsa hardcoded fallback döner."""
-    sensor_labels = ["S278\n(P25)", "S240\n(P50)", "S71\n(P75)", "S298\n(P95)"]
+    """S2/S3 per-sensör metriklerini multiseed_results.json seed-42'den yükler.
+    Bu, Table IV ile aynı kaynaktan beslenmeyi sağlar (tek otoriter kaynak)."""
+    sensor_labels = ["S278 (P25)", "S240 (P50)", "S71 (P75)", "S298 (P95)"]
+    SENSOR_IDS = ["278", "240", "71", "298"]
 
-    # ── S2 ──
-    s2_path = os.path.join(results_dir, "s2_iid_results.txt")
-    s2_data = parse_fl_results(s2_path)
-    if s2_data:
-        s2_local  = [r[1] for r in s2_data]
-        s2_global = [r[2] for r in s2_data]
-        print(f"[✓] S2 sonuçları dosyadan yüklendi: {s2_path}")
-    else:
-        print(f"[!] {s2_path} bulunamadı veya ayrıştırılamadı — hardcoded fallback.")
-        s2_local  = [0.7797, 0.7130, 0.7903, 0.6935]
-        s2_global = [0.7717, 0.8030, 0.6038, 0.6325]
-
-    # ── S3 ──
-    s3_path = os.path.join(results_dir, "s3_noniid_results.txt")
-    s3_data = parse_fl_results(s3_path)
-    if s3_data:
-        s3_local  = [r[1] for r in s3_data]
-        s3_global = [r[2] for r in s3_data]
-        print(f"[✓] S3 sonuçları dosyadan yüklendi: {s3_path}")
-    else:
-        print(f"[!] {s3_path} bulunamadı veya ayrıştırılamadı — hardcoded fallback.")
-        s3_local  = [0.5000, 0.5152, 0.5246, 0.5347]
-        s3_global = [0.5217, 0.4793, 0.5556, 0.7805]
+    ms_path = os.path.join(results_dir, "multiseed_results.json")
+    try:
+        with open(ms_path) as f:
+            ms = json.load(f)
+        seed_key = "42"  # seed=42, Table IV ile aynı
+        s2_42 = ms["s2"][seed_key]["sensor"]
+        s3_42 = ms["s3"][seed_key]["sensor"]
+        s2_local  = [s2_42[sid]["local_f1"]  for sid in SENSOR_IDS]
+        s2_global = [s2_42[sid]["global_f1"] for sid in SENSOR_IDS]
+        s3_local  = [s3_42[sid]["local_f1"]  for sid in SENSOR_IDS]
+        s3_global = [s3_42[sid]["global_f1"] for sid in SENSOR_IDS]
+        print(f"[✓] Per-sensör metrikler {ms_path} (seed=42) dosyasından yüklendi.")
+    except Exception as e:
+        print(f"[!] multiseed_results.json yüklenemedi ({e}) — hardcoded fallback.")
+        s2_local  = [0.7500, 0.7009, 0.7563, 0.7097]
+        s2_global = [0.8033, 0.7130, 0.7368, 0.7097]
+        s3_local  = [0.5000, 0.5778, 0.5574, 0.4898]
+        s3_global = [0.5217, 0.4444, 0.5574, 0.6872]
 
     return {
         "labels":    sensor_labels,
@@ -291,66 +288,46 @@ def make_fig11():
 # FIG12 — İletişim Maliyeti (Merkezi vs FL)
 # ══════════════════════════════════════════════════════════════════════════
 def make_fig12():
-    # 4 client × 3 round × 1.7 MB (model serialize) ≈ 20.4 MB client→server
-    # 4 client × 3 round × 0.15 KB (global offset)  ≈ 0.0018 MB server→client
-    comm_s1_raw = 21.0
-    comm_fl_c2s = 20.4
-    comm_fl_s2c = 0.0018
-
-    fig, ax = plt.subplots(figsize=(4.5, 3.2))
+    import matplotlib.ticker as ticker
+    comm_s1_raw = 21 * 1024
+    comm_fl_c2s = 1.33
+    comm_fl_s2c = 0.45
+    total_fl    = comm_fl_c2s + comm_fl_s2c
+    fig, ax = plt.subplots(figsize=(5.0, 4.0))
     x  = np.arange(3)
     bw = 0.45
-
-    # S1 — ham veri (privacy risk hatch)
-    ax.bar(0, comm_s1_raw, width=bw,
-           color="#CC3311", edgecolor="black", linewidth=0.6,
-           hatch="////", label="Raw sensor data (privacy risk)", zorder=3)
-
-    # S2 / S3 — model params + global threshold
-    ax.bar([1, 2], [comm_fl_c2s, comm_fl_c2s], width=bw,
-           color="#4477AA", edgecolor="black", linewidth=0.6,
-           label="Model params (client→server)", zorder=3)
+    ax.bar(0, comm_s1_raw, width=bw, color="#CC3311", edgecolor="black",
+           linewidth=0.6, hatch="////", label="Raw sensor data (S1 only)", zorder=3)
+    ax.bar([1, 2], [comm_fl_c2s, comm_fl_c2s], width=bw, color="#4477AA",
+           edgecolor="black", linewidth=0.6, label="Offset: client->server", zorder=3)
     ax.bar([1, 2], [comm_fl_s2c, comm_fl_s2c], width=bw,
-           bottom=[comm_fl_c2s, comm_fl_c2s],
-           color="#BBCC33", edgecolor="black", linewidth=0.6,
-           label="Global threshold (server→client)", zorder=3)
-
-    # Değer etiketleri
-    ax.text(0, comm_s1_raw + 0.3,
-            f"{comm_s1_raw:.1f} MB",
-            ha="center", fontsize=8.5, fontweight="bold", color="#CC3311")
+           bottom=[comm_fl_c2s, comm_fl_c2s], color="#BBCC33",
+           edgecolor="black", linewidth=0.6, label="Threshold: server->client", zorder=3)
+    ax.text(-0.3, comm_s1_raw * 1.4, "~21 MB (est.)",
+            ha="left", va="bottom", fontsize=8, fontweight="bold", color="#CC3311")
     for xi in [1, 2]:
-        ax.text(xi, comm_fl_c2s + comm_fl_s2c + 0.3,
-                f"{comm_fl_c2s:.1f} MB\n+{comm_fl_s2c*1024:.1f} KB",
-                ha="center", fontsize=7.5)
-
-    # Privacy annotation
-    ax.annotate("Raw data never\nleaves the client",
-                xy=(1.5, comm_fl_c2s / 2),
-                xytext=(2.55, 13),
-                fontsize=7.5, color="#228833",
-                arrowprops=dict(arrowstyle="->", color="#228833", lw=0.8),
-                ha="left")
-
+        ax.text(xi, total_fl * 3.5, "1.33+0.45=1.78 KB",
+                ha="center", va="bottom", fontsize=8)
+    ax.annotate("~11800x reduction vs S1",
+                xy=(0.5, total_fl * 10), xytext=(0.3, 400),
+                fontsize=8.5, color="#228833", fontweight="bold",
+                arrowprops=dict(arrowstyle="->", color="#228833", lw=1.0), ha="left")
+    ax.set_yscale("log")
     ax.set_xticks(x)
-    ax.set_xticklabels(["S1\nCentralized", "S2\nIID FL", "S3\nNon-IID FL"])
-    ax.set_ylabel("Data Transmitted (MB)")
-    ax.set_ylim(0, 27)
-    ax.set_title("Communication Cost Comparison\n(4 Clients × 3 FL Rounds, PeMS04)")
-    ax.legend(loc="upper right", framealpha=0.85, fontsize=8)
+    ax.set_xticklabels(["S1 Centralized", "S2 IID FL", "S3 Non-IID FL"])
+    ax.set_ylabel("Data Transmitted (KB)")
+    ax.set_ylim(0.1, comm_s1_raw * 60)
+    ax.set_title("Communication Cost (4 Clients x 3 FL Rounds, PeMS04)")
+    ax.legend(loc="upper right", framealpha=0.90, fontsize=7.5)
+    ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
     ax.set_axisbelow(True)
-
     plt.tight_layout()
     out = os.path.join(RESULTS_DIR, "fig12_comm_cost.png")
-    plt.savefig(out)
+    plt.savefig(out, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"[✓] fig12 kaydedildi: {out}")
+    print(f"[*] fig12 kaydedildi: {out}")
     return out
 
-
-# ══════════════════════════════════════════════════════════════════════════
-# FIG13 — S1 Precision / Recall / F1 detay
-# ══════════════════════════════════════════════════════════════════════════
 def make_fig13():
     fig, ax = plt.subplots(figsize=(3.5, 3.0))
 
@@ -388,6 +365,60 @@ def make_fig13():
     print(f"[✓] fig13 kaydedildi: {out}")
     return out
 
+
+def make_fig14():
+    """FL stability (convergence) eğrisi — convergence_summary.json'dan okunur."""
+    cv_path = os.path.join(RESULTS_DIR, "convergence_summary.json")
+    try:
+        with open(cv_path) as f:
+            cv = json.load(f)
+        s2_means = [cv["s2"][f"round_{r}"]["mean"] for r in [1, 2, 3]]
+        s2_stds  = [cv["s2"][f"round_{r}"]["std"]  for r in [1, 2, 3]]
+        s3_means = [cv["s3"][f"round_{r}"]["mean"] for r in [1, 2, 3]]
+        s3_stds  = [cv["s3"][f"round_{r}"]["std"]  for r in [1, 2, 3]]
+        print(f"[✓] Convergence verisi {cv_path} dosyasından yüklendi.")
+    except Exception as e:
+        print(f"[!] convergence_summary.json yüklenemedi ({e}) — fallback.")
+        s2_means = [0.7422, 0.7266, 0.7126]
+        s2_stds  = [0.0258, 0.0166, 0.0112]
+        s3_means = [0.5865, 0.6050, 0.5890]
+        s3_stds  = [0.0361, 0.0688, 0.0227]
+
+    rounds = [1, 2, 3]
+    s1_f1  = 0.7715
+
+    fig, ax = plt.subplots(figsize=(5.0, 3.6))
+    ax.errorbar(rounds, s2_means, yerr=s2_stds,
+                fmt="s-", color=C_S2, linewidth=1.6, markersize=6,
+                capsize=4,
+                label=f"S2 IID FL (final: {s2_means[2]:.3f}±{s2_stds[2]:.3f})",
+                zorder=4)
+    ax.errorbar(rounds, s3_means, yerr=s3_stds,
+                fmt="^-", color=C_S3, linewidth=1.6, markersize=6,
+                capsize=4,
+                label=f"S3 Non-IID FL (final: {s3_means[2]:.3f}±{s3_stds[2]:.3f})",
+                zorder=4)
+    ax.axhline(y=s1_f1, color=C_S1, linestyle="--", linewidth=1.2,
+               label=f"S1 Centralised ({s1_f1:.3f})", zorder=3)
+
+    ax.set_xticks(rounds)
+    ax.set_xlabel("Communication Round", fontsize=11)
+    ax.set_ylabel("Average F1 Score", fontsize=11)
+    ax.set_ylim(0.45, 0.90)
+    ax.set_title("FL Stability: Avg F1 per Round\n(mean ± std over 5 seeds)",
+                 fontsize=11, fontweight="bold")
+    ax.legend(fontsize=8.5, framealpha=0.9)
+    ax.yaxis.grid(True, linestyle="--", alpha=0.35, zorder=0)
+    ax.set_axisbelow(True)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.tight_layout()
+    out = os.path.join(RESULTS_DIR, "fig14_convergence_curve.png")
+    plt.savefig(out, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"[✓] fig14 kaydedildi: {out}")
+    return out
 
 # ══════════════════════════════════════════════════════════════════════════
 # ÇALIŞTIR

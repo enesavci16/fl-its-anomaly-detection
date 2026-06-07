@@ -25,7 +25,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 
 SENSOR_IDS    = [278, 240, 71, 298]
 SENSOR_FILE_IDS = {278: "278", 240: "240", 71: "071", 298: "298"}
-FEATURES      = ["flow", "speed", "occupancy"]
+FEATURES      = ["flow", "occupancy", "speed"]
 CONTAMINATION = 0.00826   # S1 ile ayni
 
 REPO_ROOT   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
