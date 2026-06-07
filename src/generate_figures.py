@@ -399,7 +399,7 @@ def make_fig14():
                 label=f"S3 Non-IID FL (final: {s3_means[2]:.3f}±{s3_stds[2]:.3f})",
                 zorder=4)
     ax.axhline(y=s1_f1, color=C_S1, linestyle="--", linewidth=1.2,
-               label=f"S1 Centralised ({s1_f1:.3f})", zorder=3)
+               label="S1 Centralised (0.772)", zorder=3)
 
     ax.set_xticks(rounds)
     ax.set_xlabel("Communication Round", fontsize=11)
